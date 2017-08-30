@@ -2,6 +2,7 @@ package com.newcoder.wenda.controller;
 
 import com.newcoder.wenda.model.*;
 import com.newcoder.wenda.service.CommentService;
+import com.newcoder.wenda.service.LikeService;
 import com.newcoder.wenda.service.QuestionService;
 import com.newcoder.wenda.service.UserService;
 import com.newcoder.wenda.util.WendaUtil;
@@ -32,6 +33,9 @@ public class QuestionContoller {
 
     @Autowired
     CommentService commentService;
+
+    @Autowired
+    LikeService likeService;
     private static final Logger logger = LoggerFactory.getLogger(QuestionContoller.class);
 
     @RequestMapping(value = "/question/add",method = RequestMethod.POST)
@@ -53,7 +57,7 @@ public class QuestionContoller {
                 return WendaUtil.getJSONString(0);
             }
         }catch (Exception e){
-            logger.error("增加题目失败",e.getMessage());
+            logger.error("增加题目失败"+e.getMessage());
         }
         return WendaUtil.getJSONString(1,"失败");
     }
@@ -68,6 +72,12 @@ public class QuestionContoller {
         for (Comment comment : list){
             ViewObject vo = new ViewObject();
             vo.set("comment",comment);
+            if (hostHolder.getUser() == null){
+                vo.set("liked","0");
+            }else {
+                vo.set("liked",likeService.getLikeStatus(hostHolder.getUser().getId(),EntityType.ENTITY_COMMENT,comment.getId()));
+            }
+            vo.set("likeCount",likeService.getLikeCount(EntityType.ENTITY_COMMENT,comment.getId()));
             vo.set("user",userService.getUser(question.getUserId()));
             comments.add(vo);
         }

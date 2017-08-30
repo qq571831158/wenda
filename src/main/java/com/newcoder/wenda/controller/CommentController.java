@@ -4,6 +4,7 @@ import com.newcoder.wenda.model.Comment;
 import com.newcoder.wenda.model.EntityType;
 import com.newcoder.wenda.model.HostHolder;
 import com.newcoder.wenda.service.CommentService;
+import com.newcoder.wenda.service.QuestionService;
 import com.newcoder.wenda.util.WendaUtil;
 import org.apache.catalina.Host;
 import org.slf4j.Logger;
@@ -22,13 +23,16 @@ import java.util.Date;
 @Controller
 public class CommentController {
 
-    private static final Logger logger = LoggerFactory.getLogger(HomeController.class);
+    private static final Logger logger = LoggerFactory.getLogger(CommentController.class);
 
     @Autowired
     private CommentService commentService;
 
     @Autowired
     HostHolder hostHolder;
+
+    @Autowired
+    QuestionService questionService;
     @RequestMapping(path = {"addComment"},method = RequestMethod.POST)
     public String addComment(@RequestParam("questionId")int questionId,
                              @RequestParam("content")String content){
@@ -45,9 +49,12 @@ public class CommentController {
             comment.setEntityId(questionId);
             comment.setEntityType(EntityType.ENTITY_QUESTION);
             commentService.addComment(comment);
+
+            int count = commentService.getCommentCount(comment.getEntityId(),comment.getEntityType());
+            questionService.updateCommentCount(comment.getEntityId(),count);
         }catch (Exception e){
             e.printStackTrace();
-            logger.error("增加评论失败",e.getMessage());
+            logger.error("增加评论失败"+e.getMessage());
         }
         return "redirect:/question/"+questionId;
     }
