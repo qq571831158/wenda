@@ -1,5 +1,8 @@
 package com.newcoder.wenda.controller;
 
+import com.newcoder.wenda.async.EventModel;
+import com.newcoder.wenda.async.EventProducer;
+import com.newcoder.wenda.async.EventType;
 import com.newcoder.wenda.model.ViewObject;
 import com.newcoder.wenda.service.UserService;
 import com.newcoder.wenda.util.WendaUtil;
@@ -28,6 +31,9 @@ public class LoginController {
 
     @Autowired
     UserService userService;
+
+    @Autowired
+    EventProducer eventProducer;
 
     @RequestMapping(path = {"reglogin"}, method = RequestMethod.GET)
     public String index(Model model,@RequestParam(value = "next",required = false)String next) {
@@ -69,11 +75,14 @@ public class LoginController {
                         @RequestParam(value = "rememberme",defaultValue = "false")boolean rememberme,
                         HttpServletResponse response) {
         try {
-            Map<String, String> map = userService.login(username, password);
+            Map<String, Object> map = userService.login(username, password);
             if (map.containsKey("ticket")) {
-                Cookie cookie = new Cookie("ticket",map.get("ticket"));
+                Cookie cookie = new Cookie("ticket",map.get("ticket").toString());
                 cookie.setPath("/");
                 response.addCookie(cookie);
+                eventProducer.fireEvent(new EventModel(EventType.LOGIN).setExt("username",username)
+                        .setExt("email","571831158@qq.com")
+                        .setActorId((int)map.get("userId")));
                 if (StringUtils.isNotBlank(next)){
                     return "redirect:"+next;
                 }
@@ -83,7 +92,8 @@ public class LoginController {
                 return "login";
             }
         } catch (Exception e) {
-            logger.error("注册异常"+e.getMessage());
+            e.printStackTrace();
+            logger.error("登录异常"+e.getMessage());
             return "login";
         }
     }
